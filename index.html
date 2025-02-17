@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Price Tracker</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(#222, rgb(123, 189, 185));
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .app-container {
+      box-shadow: 2px 2px 7px rgb(41, 39, 40);
+      width: min(70%, 500px);
+      padding: 2rem;
+      border-radius: 10px;
+      background-color: #444;
+    }
+    select {
+      background-color: #333;
+      color: #fff;
+      width: 80%;
+      margin-top: 1rem;
+    }
+    button {
+      background-color: green;
+      color: #fff;
+      border: none;
+      padding: .125rem .25rem;
+      border-radius: 5px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px;
+    }
+    th {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .positive {
+      color: green; 
+    }
+    .negative {
+      color: red; 
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container">
+    <h1>CoinGecko API</h1>
+
+    <label for="coinSelect" class="coin-select-label">Choose Cryptocurrency:</label>
+    <select id="coinSelect"></select>
+    
+    <button onclick="fetchCryptoPrice()">Get Price</button>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Cryptocurrency</th>
+          <th>Price (USD)</th>
+          <th>24h Change (%)</th>
+        </tr>
+      </thead>
+      <tbody id="cryptoTable"></tbody>
+    </table>
+  </div>
+  <script>
+    const coinSelect = document.getElementById("coinSelect");
+    const cryptoTable = document.getElementById("cryptoTable");
+
+    // Fetch all available cryptocurrencies from CoinGecko
+    function loadCoins() {
+      fetch("https://api.coingecko.com/api/v3/coins/list")
+        .then(response => response.json())
+        .then(coins => {
+          coinSelect.innerHTML = ""; // Clear existing options
+          coins.forEach(coin => {
+            const option = document.createElement("option");
+            option.value = coin.id;
+            option.textContent = `${coin.name} (${coin.symbol.toUpperCase()})`;
+            coinSelect.appendChild(option);
+          });
+        })
+        .catch(error => console.error("Error fetching coins:", error));
+    }
+
+    // Fetch crypto price for the selected coin
+    function fetchCryptoPrice() {
+      const selectedCoin = coinSelect.value;
+      fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${selectedCoin}&vs_currencies=usd&include_24hr_change=true`)
+        .then(response => response.json())
+        .then(data => {
+          cryptoTable.innerHTML = ""; // Clear previous data
+          if (data[selectedCoin]) {
+            const price = data[selectedCoin].usd.toFixed(2);
+            const change = data[selectedCoin].usd_24h_change?.toFixed(2) || "N/A";
+
+            const row = `
+              <tr>
+                <td>${selectedCoin.toUpperCase()}</td>
+                <td>$${price}</td>
+                <td class="${change >= 0 ? "positive" : "negative"}">${change}%</td>
+              </tr>
+            `;
+            cryptoTable.innerHTML = row;
+          }
+        })
+        .catch(error => console.error("Error fetching price:", error));
+    }
+
+    // Load available coins when the page loads
+    window.onload = loadCoins;
+  </script>
+</body>
+</html>
